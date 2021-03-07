@@ -1,6 +1,8 @@
 package fi.dy.masa.litematica.event;
 
 import java.util.List;
+
+import fi.dy.masa.litematica.schematic.printer.SchematicPrinter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -50,6 +52,7 @@ public class RenderHandler implements IRenderer
     public void onRenderWorldLast(float partialTicks)
     {
         Minecraft mc = Minecraft.getMinecraft();
+        SchematicPrinter.partialTicks = partialTicks; //TODO: Move to a better place.
 
         if (Configs.Visuals.ENABLE_RENDERING.getBooleanValue() && mc.player != null)
         {

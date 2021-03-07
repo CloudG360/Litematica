@@ -7,6 +7,7 @@ import fi.dy.masa.litematica.Reference;
 import fi.dy.masa.litematica.block.state.BlockStateHelper;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.reference.Constants;
+import fi.dy.masa.litematica.schematic.LitematicaSchematic;
 import fi.dy.masa.litematica.schematic.printer.nbtsync.NBTSync;
 import fi.dy.masa.litematica.schematic.printer.nbtsync.SyncRegistry;
 import fi.dy.masa.litematica.schematic.printer.registry.PlacementData;
@@ -30,21 +31,28 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fluids.BlockFluidBase;
 
 import java.util.*;
 
 public class SchematicPrinter {
     public static final SchematicPrinter INSTANCE = new SchematicPrinter();
+    public static float partialTicks = 0;
 
     private final Minecraft minecraft = Minecraft.getMinecraft();
 
     private boolean isEnabled = true;
     private boolean isPrinting = false;
 
-    private WorldSchematic schematic = null;
+    private WorldSchematic schematicWorld = null;
+    private LitematicaSchematic schematic = null;
     private byte[][][] timeout = null;
     private HashMap<BlockPos, Integer> syncBlacklist = new HashMap<BlockPos, Integer>();
+
+    private int schemPosX;
+    private int schemPosY;
+    private int schemPosZ;
 
     public boolean isEnabled() {
         return this.isEnabled;
@@ -67,19 +75,30 @@ public class SchematicPrinter {
         this.isPrinting = isPrinting;
     }
 
-    public WorldSchematic getSchematic() {
-        return this.schematic;
+    public WorldSchematic getSchematicWorld() {
+        return this.schematicWorld;
     }
+    public LitematicaSchematic getSchematic() { return schematic; }
 
-    public void setSchematic(final WorldSchematic schematic) {
+    public void setSchematic(final WorldSchematic schematicWorld, final LitematicaSchematic schematic) {
+
+        for (BlockPos pos: schematic.getAreaPositions().values()) { // I have no idea if this works lmao
+            if(pos.getX() < schemPosX) schemPosX = pos.getX();
+            if(pos.getY() < schemPosY) schemPosY = pos.getY();
+            if(pos.getZ() < schemPosZ) schemPosZ = pos.getZ();
+        }
+
         this.isPrinting = false;
+        this.schematicWorld = schematicWorld;
         this.schematic = schematic;
         refresh();
     }
 
+
+
     public void refresh() {
         if (this.schematic != null) {
-            this.timeout = new byte[this.schematic.getWidth()][this.schematic.getHeight()][this.schematic.getLength()];
+            this.timeout = new byte[this.schematic.getTotalSize().getX()][this.schematic.getTotalSize().getY()][this.schematic.getTotalSize().getZ()];
         } else {
             this.timeout = null;
         }
@@ -87,20 +106,20 @@ public class SchematicPrinter {
     }
 
     public boolean print(final WorldClient world, final EntityPlayerSP player) {
-        final double dX = ClientProxy.playerPosition.x - this.schematic.position.x;
-        final double dY = ClientProxy.playerPosition.y - this.schematic.position.y;
-        final double dZ = ClientProxy.playerPosition.z - this.schematic.position.z;
+        final double dX = (player.lastTickPosX + (player.posX - player.lastTickPosX) * partialTicks) - schemPosX;
+        final double dY = (player.lastTickPosY + (player.posY - player.lastTickPosY) * partialTicks) - schemPosY;
+        final double dZ = (player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * partialTicks) - schemPosZ;
         final int x = (int) Math.floor(dX);
         final int y = (int) Math.floor(dY);
         final int z = (int) Math.floor(dZ);
         final int range = Configs.Generic.PLACE_DISTANCE.getIntegerValue();
 
         final int minX = Math.max(0, x - range);
-        final int maxX = Math.min(this.schematic.getWidth() - 1, x + range);
+        final int maxX = Math.min(this.schematic.getTotalSize().getX() - 1, x + range);
         int minY = Math.max(0, y - range);
-        int maxY = Math.min(this.schematic.getHeight() - 1, y + range);
+        int maxY = Math.min(this.schematic.getTotalSize().getY() - 1, y + range);
         final int minZ = Math.max(0, z - range);
-        final int maxZ = Math.min(this.schematic.getLength() - 1, z + range);
+        final int maxZ = Math.min(this.schematic.getTotalSize().getZ() - 1, z + range);
 
         if (minX > maxX || minY > maxY || minZ > maxZ) {
             return false;
@@ -109,7 +128,7 @@ public class SchematicPrinter {
         final int slot = player.inventory.currentItem;
         final boolean isSneaking = player.isSneaking();
 
-        switch (schematic.layerMode) {
+        /*switch (schematic.layerMode) {
         case ALL: break;
         case SINGLE_LAYER:
             if (schematic.renderingLayer > maxY) {
@@ -123,7 +142,7 @@ public class SchematicPrinter {
             }
             maxY = schematic.renderingLayer;
             break;
-        }
+        }*/
 
         syncSneaking(player, true);
 
@@ -162,12 +181,12 @@ public class SchematicPrinter {
             return false;
         }
 
-        final int wx = this.schematic.position.x + x;
-        final int wy = this.schematic.position.y + y;
-        final int wz = this.schematic.position.z + z;
+        final int wx = this.schemPosX + x;
+        final int wy = this.schemPosY + y;
+        final int wz = this.schemPosZ + z;
         final BlockPos realPos = new BlockPos(wx, wy, wz);
 
-        final IBlockState blockState = this.schematic.getBlockState(pos);
+        final IBlockState blockState = this.schematicWorld.getBlockState(pos);
         final IBlockState realBlockState = world.getBlockState(realPos);
         final Block realBlock = realBlockState.getBlock();
 
@@ -185,7 +204,7 @@ public class SchematicPrinter {
                 }
 
                 Litematica.logger.trace("Trying to sync block at {} {}", realPos, tries);
-                final boolean success = handler.execute(player, this.schematic, pos, world, realPos);
+                final boolean success = handler.execute(player, this.schematicWorld, pos, world, realPos);
                 if (success) {
                     this.syncBlacklist.put(realPos, tries + 1);
                 }
@@ -204,7 +223,7 @@ public class SchematicPrinter {
             return !Configs.Generic.INSTANTLY_BREAK.getBooleanValue();
         }
 
-        if (this.schematic.isAirBlock(pos)) {
+        if (this.schematicWorld.isAirBlock(pos)) {
             return false;
         }
 
@@ -212,7 +231,7 @@ public class SchematicPrinter {
             return false;
         }
 
-        final ItemStack itemStack = BlockStateToItemStack.getItemStack(blockState, new RayTraceResult(player), this.schematic, pos, player);
+        final ItemStack itemStack = BlockStateToItemStack.getItemStack(blockState, new RayTraceResult(player), this.schematicWorld, pos, player);
         if (itemStack.isEmpty()) {
             Litematica.logger.debug("{} is missing a mapping!", blockState);
             return false;
