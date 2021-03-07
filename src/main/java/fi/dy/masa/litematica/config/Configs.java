@@ -1,8 +1,7 @@
 package fi.dy.masa.litematica.config;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import com.google.common.collect.ImmutableList;
 import fi.dy.masa.litematica.Reference;
 import fi.dy.masa.litematica.data.DataManager;
@@ -50,6 +49,14 @@ public class Configs implements IConfigHandler
         public static final ConfigString        TOOL_ITEM               = new ConfigString(     "toolItem", "minecraft:stick", "The item to use as the \"tool\" for selections etc.");
         public static final ConfigBoolean       TOOL_ITEM_ENABLED       = new ConfigBoolean(    "toolItemEnabled", true, "If true, then the \"tool\" item can be used to control selections etc.", "Tool Item Enabled");
 
+        public static final ConfigInteger       PLACE_DISTANCE          = new ConfigInteger(    "schem_placeDistance", 5, "Ported from Schematica, used in the printer. :)");
+        public static final ConfigInteger       TIMEOUT                 = new ConfigInteger(    "schem_timeout", 10, "Ported from Schematica, used in the printer. :)");
+        public static final ConfigBoolean       DESTROY_BLOCKS          = new ConfigBoolean(    "schem_destroyBlocks", false, "Ported from Schematica, used in the printer. :)");
+        public static final ConfigBoolean       INSTANTLY_PLACE         = new ConfigBoolean(    "schem_instantlyPlace", false, "Ported from Schematica, used in the printer. :)");
+        public static final ConfigBoolean       INSTANTLY_BREAK         = new ConfigBoolean(    "schem_instantlyBreak", false, "Ported from Schematica, used in the printer. :)");
+        public static final ConfigBoolean       PLACE_ADJACENT          = new ConfigBoolean(    "schem_placeAdjacent", true, "Ported from Schematica, used in the printer. :)");
+
+
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 AREAS_PER_WORLD,
                 BETTER_RENDER_ORDER,
@@ -76,7 +83,14 @@ public class Configs implements IConfigHandler
                 PASTE_COMMAND_LIMIT,
                 PASTE_COMMAND_SETBLOCK,
                 PICK_BLOCKABLE_SLOTS,
-                TOOL_ITEM
+                TOOL_ITEM,
+
+                PLACE_DISTANCE,
+                TIMEOUT,
+                DESTROY_BLOCKS,
+                INSTANTLY_PLACE,
+                INSTANTLY_BREAK,
+                PLACE_ADJACENT
         );
     }
 
@@ -239,6 +253,22 @@ public class Configs implements IConfigHandler
         );
     }
 
+    private static final boolean[] SWAP_SLOTS_DEFAULT = new boolean[] {
+            false, false, false, false, false, true, true, true, true //TODO: Figure out how tf to get this into the config.
+    };
+    public static boolean[] swapSlots = Arrays.copyOf(SWAP_SLOTS_DEFAULT, SWAP_SLOTS_DEFAULT.length);
+    public static final Queue<Integer> swapSlotsQueue = new ArrayDeque<>();
+
+    private static void loadConfigurationSwapSlots() {
+        swapSlotsQueue.clear();
+        for (int i = 0; i < SWAP_SLOTS_DEFAULT.length; i++) {
+
+            if (swapSlots[i]) {
+                swapSlotsQueue.offer(i);
+            }
+        }
+    }
+
     @Override
     public String getModName()
     {
@@ -268,6 +298,7 @@ public class Configs implements IConfigHandler
     @Override
     public void onPostLoad()
     {
+        loadConfigurationSwapSlots();
         DataManager.setToolItem(Generic.TOOL_ITEM.getStringValue());
         InventoryUtils.setPickBlockableSlots(Generic.PICK_BLOCKABLE_SLOTS.getStringValue());
     }

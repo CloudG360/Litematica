@@ -5,6 +5,7 @@ import com.github.lunatrius.core.util.math.MBlockPos;
 import fi.dy.masa.litematica.Litematica;
 import fi.dy.masa.litematica.Reference;
 import fi.dy.masa.litematica.block.state.BlockStateHelper;
+import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.reference.Constants;
 import fi.dy.masa.litematica.schematic.printer.nbtsync.NBTSync;
 import fi.dy.masa.litematica.schematic.printer.nbtsync.SyncRegistry;
@@ -31,10 +32,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.BlockFluidBase;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class SchematicPrinter {
     public static final SchematicPrinter INSTANCE = new SchematicPrinter();
@@ -95,7 +93,7 @@ public class SchematicPrinter {
         final int x = (int) Math.floor(dX);
         final int y = (int) Math.floor(dY);
         final int z = (int) Math.floor(dZ);
-        final int range = ConfigurationHandler.placeDistance;
+        final int range = Configs.Generic.PLACE_DISTANCE.getIntegerValue();
 
         final int minX = Math.max(0, x - range);
         final int maxX = Math.min(this.schematic.getWidth() - 1, x + range);
@@ -177,7 +175,7 @@ public class SchematicPrinter {
             // TODO: clean up this mess
             final NBTSync handler = SyncRegistry.INSTANCE.getHandler(realBlock);
             if (handler != null) {
-                this.timeout[x][y][z] = (byte) ConfigurationHandler.timeout;
+                this.timeout[x][y][z] = (byte) Configs.Generic.TIMEOUT.getIntegerValue();
 
                 Integer tries = this.syncBlacklist.get(realPos);
                 if (tries == null) {
@@ -198,12 +196,12 @@ public class SchematicPrinter {
             return false;
         }
 
-        if (ConfigurationHandler.destroyBlocks && !world.isAirBlock(realPos) && this.minecraft.playerController.isInCreativeMode()) {
+        if (Configs.Generic.DESTROY_BLOCKS.getBooleanValue() && !world.isAirBlock(realPos) && this.minecraft.playerController.isInCreativeMode()) {
             this.minecraft.playerController.clickBlock(realPos, EnumFacing.DOWN);
 
-            this.timeout[x][y][z] = (byte) ConfigurationHandler.timeout;
+            this.timeout[x][y][z] = (byte) Configs.Generic.TIMEOUT.getIntegerValue();
 
-            return !ConfigurationHandler.destroyInstantly;
+            return !Configs.Generic.INSTANTLY_BREAK.getBooleanValue();
         }
 
         if (this.schematic.isAirBlock(pos)) {
@@ -221,9 +219,9 @@ public class SchematicPrinter {
         }
 
         if (placeBlock(world, player, realPos, blockState, itemStack)) {
-            this.timeout[x][y][z] = (byte) ConfigurationHandler.timeout;
+            this.timeout[x][y][z] = (byte) Configs.Generic.TIMEOUT.getIntegerValue();
 
-            if (!ConfigurationHandler.placeInstantly) {
+            if (!Configs.Generic.INSTANTLY_PLACE.getBooleanValue()) {
                 return true;
             }
         }
@@ -257,7 +255,7 @@ public class SchematicPrinter {
     }
 
     private List<EnumFacing> getSolidSides(final World world, final BlockPos pos) {
-        if (!ConfigurationHandler.placeAdjacent) {
+        if (!Configs.Generic.PLACE_ADJACENT.getBooleanValue()) {
             return Arrays.asList(EnumFacing.VALUES);
         }
 
@@ -354,7 +352,7 @@ public class SchematicPrinter {
         */
 
         // FIXME: when an adjacent block is not required the blocks should be placed 1 block away from the actual position (because air is replaceable)
-        final BlockPos actualPos = ConfigurationHandler.placeAdjacent ? pos : pos.offset(side);
+        final BlockPos actualPos = Configs.Generic.PLACE_ADJACENT.getBooleanValue() ? pos : pos.offset(side);
         final EnumActionResult result = this.minecraft.playerController.processRightClickBlock(player, world, actualPos, side, hitVec, hand);
         if ((result != EnumActionResult.SUCCESS)) {
             return false;
@@ -376,7 +374,7 @@ public class SchematicPrinter {
     private boolean swapToItem(final InventoryPlayer inventory, final ItemStack itemStack, final boolean swapSlots) {
         final int slot = getInventorySlotWithItem(inventory, itemStack);
 
-        if (this.minecraft.playerController.isInCreativeMode() && (slot < Constants.Inventory.InventoryOffset.HOTBAR || slot >= Constants.Inventory.InventoryOffset.HOTBAR + Constants.Inventory.Size.HOTBAR) && ConfigurationHandler.swapSlotsQueue.size() > 0) {
+        if (this.minecraft.playerController.isInCreativeMode() && (slot < Constants.Inventory.InventoryOffset.HOTBAR || slot >= Constants.Inventory.InventoryOffset.HOTBAR + Constants.Inventory.Size.HOTBAR) && Configs.swapSlotsQueue.size() > 0) {
             inventory.currentItem = getNextSlot();
             inventory.setInventorySlotContents(inventory.currentItem, itemStack.copy());
             this.minecraft.playerController.sendSlotPacket(inventory.getStackInSlot(inventory.currentItem), Constants.Inventory.SlotOffset.HOTBAR + inventory.currentItem);
@@ -405,7 +403,7 @@ public class SchematicPrinter {
     }
 
     private boolean swapSlots(final InventoryPlayer inventory, final int from) {
-        if (ConfigurationHandler.swapSlotsQueue.size() > 0) {
+        if (Configs.swapSlots.length > 0) {
             final int slot = getNextSlot();
 
             swapSlots(from, slot);
@@ -416,8 +414,8 @@ public class SchematicPrinter {
     }
 
     private int getNextSlot() {
-        final int slot = ConfigurationHandler.swapSlotsQueue.poll() % Constants.Inventory.Size.HOTBAR;
-        ConfigurationHandler.swapSlotsQueue.offer(slot);
+        final int slot = Configs.swapSlotsQueue.poll() % Constants.Inventory.Size.HOTBAR;
+        Configs.swapSlotsQueue.offer(slot);
         return slot;
     }
 
