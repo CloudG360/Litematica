@@ -8,6 +8,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
+
+import fi.dy.masa.litematica.Litematica;
 import org.lwjgl.opengl.GL11;
 import com.google.common.collect.Lists;
 import fi.dy.masa.litematica.data.DataManager;
@@ -266,149 +268,140 @@ public class RenderGlobalSchematic extends RenderGlobal
     public void setupTerrain(Entity viewEntity, double partialTicks, ICamera camera, int frameCount, boolean playerSpectator)
     {
         World world = this.world;
-        world.profiler.startSection("setup_terrain");
+        if(world != null) {
+            world.profiler.startSection("setup_terrain");
 
-        if (this.viewFrustum == null || this.mc.gameSettings.renderDistanceChunks != this.renderDistanceChunks)
-        {
-            this.loadRenderers();
-        }
+            if (this.viewFrustum == null || this.mc.gameSettings.renderDistanceChunks != this.renderDistanceChunks) {
+                this.loadRenderers();
+            }
 
-        world.profiler.startSection("camera");
+            world.profiler.startSection("camera");
 
-        double diffX = viewEntity.posX - this.frustumUpdatePosX;
-        double diffY = viewEntity.posY - this.frustumUpdatePosY;
-        double diffZ = viewEntity.posZ - this.frustumUpdatePosZ;
+            double diffX = viewEntity.posX - this.frustumUpdatePosX;
+            double diffY = viewEntity.posY - this.frustumUpdatePosY;
+            double diffZ = viewEntity.posZ - this.frustumUpdatePosZ;
 
-        if (this.frustumUpdatePosChunkX != viewEntity.chunkCoordX ||
-            this.frustumUpdatePosChunkY != viewEntity.chunkCoordY ||
-            this.frustumUpdatePosChunkZ != viewEntity.chunkCoordZ ||
-            diffX * diffX + diffY * diffY + diffZ * diffZ > 16.0D)
-        {
-            this.frustumUpdatePosX = viewEntity.posX;
-            this.frustumUpdatePosY = viewEntity.posY;
-            this.frustumUpdatePosZ = viewEntity.posZ;
-            this.frustumUpdatePosChunkX = viewEntity.chunkCoordX;
-            this.frustumUpdatePosChunkY = viewEntity.chunkCoordY;
-            this.frustumUpdatePosChunkZ = viewEntity.chunkCoordZ;
-            this.viewFrustum.updateChunkPositions(viewEntity.posX, viewEntity.posZ);
-        }
+            if (this.frustumUpdatePosChunkX != viewEntity.chunkCoordX ||
+                    this.frustumUpdatePosChunkY != viewEntity.chunkCoordY ||
+                    this.frustumUpdatePosChunkZ != viewEntity.chunkCoordZ ||
+                    diffX * diffX + diffY * diffY + diffZ * diffZ > 16.0D) {
+                this.frustumUpdatePosX = viewEntity.posX;
+                this.frustumUpdatePosY = viewEntity.posY;
+                this.frustumUpdatePosZ = viewEntity.posZ;
+                this.frustumUpdatePosChunkX = viewEntity.chunkCoordX;
+                this.frustumUpdatePosChunkY = viewEntity.chunkCoordY;
+                this.frustumUpdatePosChunkZ = viewEntity.chunkCoordZ;
+                this.viewFrustum.updateChunkPositions(viewEntity.posX, viewEntity.posZ);
+            }
 
-        world.profiler.endStartSection("renderlist_camera");
-        double x = viewEntity.lastTickPosX + (viewEntity.posX - viewEntity.lastTickPosX) * partialTicks;
-        double y = viewEntity.lastTickPosY + (viewEntity.posY - viewEntity.lastTickPosY) * partialTicks;
-        double z = viewEntity.lastTickPosZ + (viewEntity.posZ - viewEntity.lastTickPosZ) * partialTicks;
-        this.renderContainer.initialize(x, y, z);
+            world.profiler.endStartSection("renderlist_camera");
+            double x = viewEntity.lastTickPosX + (viewEntity.posX - viewEntity.lastTickPosX) * partialTicks;
+            double y = viewEntity.lastTickPosY + (viewEntity.posY - viewEntity.lastTickPosY) * partialTicks;
+            double z = viewEntity.lastTickPosZ + (viewEntity.posZ - viewEntity.lastTickPosZ) * partialTicks;
+            this.renderContainer.initialize(x, y, z);
 
-        world.profiler.endStartSection("culling");
-        BlockPos viewPos = new BlockPos(x, y + (double) viewEntity.getEyeHeight(), z);
-        final int centerChunkX = (viewPos.getX() >> 4);
-        final int centerChunkZ = (viewPos.getZ() >> 4);
-        final int renderDistance = this.mc.gameSettings.renderDistanceChunks;
-        SubChunkPos viewSubChunk = new SubChunkPos(centerChunkX, viewPos.getY() >> 4, centerChunkZ);
-        BlockPos viewPosSubChunk = new BlockPos(viewSubChunk.getX() << 4, viewSubChunk.getY() << 4, viewSubChunk.getZ() << 4);
+            world.profiler.endStartSection("culling");
+            BlockPos viewPos = new BlockPos(x, y + (double) viewEntity.getEyeHeight(), z);
+            final int centerChunkX = (viewPos.getX() >> 4);
+            final int centerChunkZ = (viewPos.getZ() >> 4);
+            final int renderDistance = this.mc.gameSettings.renderDistanceChunks;
+            SubChunkPos viewSubChunk = new SubChunkPos(centerChunkX, viewPos.getY() >> 4, centerChunkZ);
+            BlockPos viewPosSubChunk = new BlockPos(viewSubChunk.getX() << 4, viewSubChunk.getY() << 4, viewSubChunk.getZ() << 4);
 
-        this.displayListEntitiesDirty = this.displayListEntitiesDirty || this.chunksToUpdate.isEmpty() == false ||
-                viewEntity.posX != this.lastViewEntityX ||
-                viewEntity.posY != this.lastViewEntityY ||
-                viewEntity.posZ != this.lastViewEntityZ ||
-                viewEntity.rotationPitch != this.lastViewEntityPitch ||
-                viewEntity.rotationYaw != this.lastViewEntityYaw;
-        this.lastViewEntityX = viewEntity.posX;
-        this.lastViewEntityY = viewEntity.posY;
-        this.lastViewEntityZ = viewEntity.posZ;
-        this.lastViewEntityPitch = viewEntity.rotationPitch;
-        this.lastViewEntityYaw = viewEntity.rotationYaw;
+            this.displayListEntitiesDirty = this.displayListEntitiesDirty || this.chunksToUpdate.isEmpty() == false ||
+                    viewEntity.posX != this.lastViewEntityX ||
+                    viewEntity.posY != this.lastViewEntityY ||
+                    viewEntity.posZ != this.lastViewEntityZ ||
+                    viewEntity.rotationPitch != this.lastViewEntityPitch ||
+                    viewEntity.rotationYaw != this.lastViewEntityYaw;
+            this.lastViewEntityX = viewEntity.posX;
+            this.lastViewEntityY = viewEntity.posY;
+            this.lastViewEntityZ = viewEntity.posZ;
+            this.lastViewEntityPitch = viewEntity.rotationPitch;
+            this.lastViewEntityYaw = viewEntity.rotationYaw;
 
-        world.profiler.endStartSection("update");
+            world.profiler.endStartSection("update");
 
-        if (this.displayListEntitiesDirty)
-        {
-            world.profiler.startSection("fetch");
+            if (this.displayListEntitiesDirty) {
+                world.profiler.startSection("fetch");
 
-            this.displayListEntitiesDirty = false;
-            this.renderInfos.clear();
+                this.displayListEntitiesDirty = false;
+                this.renderInfos.clear();
 
-            Entity.setRenderDistanceWeight(MathHelper.clamp((double) renderDistance / 8.0D, 1.0D, 2.5D));
+                Entity.setRenderDistanceWeight(MathHelper.clamp((double) renderDistance / 8.0D, 1.0D, 2.5D));
 
-            Set<SubChunkPos> set = DataManager.getSchematicPlacementManager().getAllTouchedSubChunks();
-            List<SubChunkPos> positions = new ArrayList<>(set.size());
-            positions.addAll(set);
-            Collections.sort(positions, new SubChunkPos.DistanceComparator(viewSubChunk));
+                Set<SubChunkPos> set = DataManager.getSchematicPlacementManager().getAllTouchedSubChunks();
+                List<SubChunkPos> positions = new ArrayList<>(set.size());
+                positions.addAll(set);
+                Collections.sort(positions, new SubChunkPos.DistanceComparator(viewSubChunk));
 
-            //Queue<SubChunkPos> queuePositions = new PriorityQueue<>(new SubChunkPos.DistanceComparator(viewSubChunk));
-            //queuePositions.addAll(set);
+                //Queue<SubChunkPos> queuePositions = new PriorityQueue<>(new SubChunkPos.DistanceComparator(viewSubChunk));
+                //queuePositions.addAll(set);
 
-            //if (GuiBase.isCtrlDown()) System.out.printf("sorted positions: %d\n", positions.size());
+                //if (GuiBase.isCtrlDown()) System.out.printf("sorted positions: %d\n", positions.size());
 
-            world.profiler.endStartSection("iteration");
+                world.profiler.endStartSection("iteration");
 
-            //while (queuePositions.isEmpty() == false)
-            for (int i = 0; i < positions.size(); ++i)
-            {
-                //SubChunkPos subChunk = queuePositions.poll();
-                SubChunkPos subChunk = positions.get(i);
+                //while (queuePositions.isEmpty() == false)
+                for (int i = 0; i < positions.size(); ++i) {
+                    //SubChunkPos subChunk = queuePositions.poll();
+                    SubChunkPos subChunk = positions.get(i);
 
-                // Only render sub-chunks that are within the client's render distance, and that
-                // have been already properly loaded on the client
-                if (Math.abs(subChunk.getX() - centerChunkX) <= renderDistance &&
-                    Math.abs(subChunk.getZ() - centerChunkZ) <= renderDistance &&
-                    world.getChunkProvider().isChunkGeneratedAt(subChunk.getX(), subChunk.getZ()))
-                {
-                    BlockPos subChunkCornerPos = new BlockPos(subChunk.getX() << 4, subChunk.getY() << 4, subChunk.getZ() << 4);
-                    RenderChunkSchematicVbo renderChunk = (RenderChunkSchematicVbo) ((IMixinViewFrustum) this.viewFrustum).invokeGetRenderChunk(subChunkCornerPos);
+                    // Only render sub-chunks that are within the client's render distance, and that
+                    // have been already properly loaded on the client
+                    if (Math.abs(subChunk.getX() - centerChunkX) <= renderDistance &&
+                            Math.abs(subChunk.getZ() - centerChunkZ) <= renderDistance &&
+                            world.getChunkProvider().isChunkGeneratedAt(subChunk.getX(), subChunk.getZ())) {
+                        BlockPos subChunkCornerPos = new BlockPos(subChunk.getX() << 4, subChunk.getY() << 4, subChunk.getZ() << 4);
+                        RenderChunkSchematicVbo renderChunk = (RenderChunkSchematicVbo) ((IMixinViewFrustum) this.viewFrustum).invokeGetRenderChunk(subChunkCornerPos);
 
-                    if (renderChunk != null)
-                    {
-                        if (renderChunk.setFrameIndex(frameCount) && camera.isBoundingBoxInFrustum(renderChunk.boundingBox))
-                        {
-                            //if (GuiBase.isCtrlDown()) System.out.printf("add @ %s\n", subChunk);
-                            if (renderChunk.needsUpdate() && subChunkCornerPos.equals(viewPosSubChunk))
-                            {
-                                renderChunk.setNeedsUpdate(true);
+                        if (renderChunk != null) {
+                            if (renderChunk.setFrameIndex(frameCount) && camera.isBoundingBoxInFrustum(renderChunk.boundingBox)) {
+                                //if (GuiBase.isCtrlDown()) System.out.printf("add @ %s\n", subChunk);
+                                if (renderChunk.needsUpdate() && subChunkCornerPos.equals(viewPosSubChunk)) {
+                                    renderChunk.setNeedsUpdate(true);
+                                }
+
+                                this.renderInfos.add(renderChunk);
                             }
-
-                            this.renderInfos.add(renderChunk);
                         }
+                    }
+                }
+
+                world.profiler.endSection();
+            }
+
+            world.profiler.endStartSection("rebuild_near");
+            Set<RenderChunkSchematicVbo> set = this.chunksToUpdate;
+            this.chunksToUpdate = new LinkedHashSet<>();
+
+            for (RenderChunkSchematicVbo renderChunkTmp : this.renderInfos) {
+                if (renderChunkTmp.needsUpdate() || set.contains(renderChunkTmp)) {
+                    this.displayListEntitiesDirty = true;
+                    BlockPos pos = renderChunkTmp.getPosition().add(8, 8, 8);
+                    boolean isNear = pos.distanceSq(viewPos) < 1024.0D;
+
+                    if (renderChunkTmp.needsImmediateUpdate() == false && isNear == false) {
+                        this.chunksToUpdate.add(renderChunkTmp);
+                    } else {
+                        //if (GuiBase.isCtrlDown()) System.out.printf("====== update now\n");
+                        world.profiler.startSection("build_near");
+
+                        this.renderDispatcher.updateChunkNow(renderChunkTmp);
+                        renderChunkTmp.clearNeedsUpdate();
+
+                        world.profiler.endSection();
                     }
                 }
             }
 
+            this.chunksToUpdate.addAll(set);
+
             world.profiler.endSection();
+            world.profiler.endSection();
+        } else {
+            Litematica.logger.warn("Where on earth is the world");
         }
-
-        world.profiler.endStartSection("rebuild_near");
-        Set<RenderChunkSchematicVbo> set = this.chunksToUpdate;
-        this.chunksToUpdate = new LinkedHashSet<>();
-
-        for (RenderChunkSchematicVbo renderChunkTmp : this.renderInfos)
-        {
-            if (renderChunkTmp.needsUpdate() || set.contains(renderChunkTmp))
-            {
-                this.displayListEntitiesDirty = true;
-                BlockPos pos = renderChunkTmp.getPosition().add(8, 8, 8);
-                boolean isNear = pos.distanceSq(viewPos) < 1024.0D;
-
-                if (renderChunkTmp.needsImmediateUpdate() == false && isNear == false)
-                {
-                    this.chunksToUpdate.add(renderChunkTmp);
-                }
-                else
-                {
-                    //if (GuiBase.isCtrlDown()) System.out.printf("====== update now\n");
-                    world.profiler.startSection("build_near");
-
-                    this.renderDispatcher.updateChunkNow(renderChunkTmp);
-                    renderChunkTmp.clearNeedsUpdate();
-
-                    world.profiler.endSection();
-                }
-            }
-        }
-
-        this.chunksToUpdate.addAll(set);
-
-        world.profiler.endSection();
-        world.profiler.endSection();
     }
 
     @Override
