@@ -82,6 +82,10 @@ public class SchematicPrinter {
 
     public void setSchematic(final WorldSchematic schematicWorld, final LitematicaSchematic schematic) {
 
+        schemPosX = Integer.MAX_VALUE;
+        schemPosY = Integer.MAX_VALUE;
+        schemPosZ = Integer.MAX_VALUE;
+
         for (BlockPos pos: schematic.getAreaPositions().values()) { // I have no idea if this works lmao
             if(pos.getX() < schemPosX) schemPosX = pos.getX();
             if(pos.getY() < schemPosY) schemPosY = pos.getY();
