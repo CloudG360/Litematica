@@ -30,6 +30,9 @@ apply plugin: 'org.spongepowered.mixin'
 
 repositories {
     maven { url = "https://repo.spongepowered.org/maven" }
+    ivy {
+        url 'http://mc.lunatri.us/files'
+    }
 }
 
 ext.configFile = file "build.properties"
@@ -83,6 +86,7 @@ sourceSets {
 
 dependencies {
     deobfCompile "fi.dy.masa.malilib:malilib-forge-" + config.minecraft_version_out + ":" + config.malilib_version// + ":deobf"
+    deobfCompile group: 'com.github.lunatrius', name: 'LunatriusCore', version: "${config.minecraft_version}-${config.lunatriuscore_version}", classifier: 'universal'
 
     /*
     shade('org.spongepowered:mixin:0.7.11-SNAPSHOT') {
