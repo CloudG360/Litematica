@@ -29,7 +29,7 @@ apply plugin: 'net.minecraftforge.gradle.forge'
 apply plugin: 'org.spongepowered.mixin'
 
 repositories {
-    maven { url = "http://repo.spongepowered.org/maven" }
+    maven { url = "https://repo.spongepowered.org/maven" }
 }
 
 ext.configFile = file "build.properties"
