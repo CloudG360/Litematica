@@ -10,6 +10,10 @@ Changes to this fork
 
 This fork takes the Schematic Printer implementation from Lunatrius's Schematica mod and tries to make it work with Litematica.
 
+I was working on this fork to get the printer on a forge 1.12.2 server, however, the modpack was not compatible with the existing Litematica build and kept on causing rendering-based crashes which I'm not experienced enough in Forge to fix This project is now on hold, due to this.
+
+Making the Schematica classes work within Litematica is complete (Along with most of the configuration options needed), if anyone wants to integrate it with the GUI, feel free to make a fork or submit a PR. Look into the **SchematicPrinter** class.
+
 Compiling
 =========
 * Clone the repository

@@ -112,108 +112,107 @@ public class LitematicaRenderer
 
     private void renderWorld(float partialTicks, long finishTimeNano)
     {
-        this.mc.profiler.startSection("culling");
-        Entity entity = this.mc.getRenderViewEntity();
-        ICamera icamera = this.createCamera(entity, partialTicks);
+        if(this.worldRenderer.world != null) {
+            this.mc.profiler.startSection("culling");
+            Entity entity = this.mc.getRenderViewEntity();
+            ICamera icamera = this.createCamera(entity, partialTicks);
 
-        GlStateManager.shadeModel(GL11.GL_SMOOTH);
-
-        this.mc.profiler.endStartSection("prepare_terrain");
-        this.mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-        fi.dy.masa.malilib.render.RenderUtils.disableItemLighting();
-
-        RenderGlobalSchematic renderGlobal = this.getWorldRenderer();
-
-        this.mc.profiler.endStartSection("terrain_setup");
-        renderGlobal.setupTerrain(entity, partialTicks, icamera, this.frameCount++, this.mc.player.isSpectator());
-
-        this.mc.profiler.endStartSection("update_chunks");
-        renderGlobal.updateChunks(finishTimeNano);
-
-        this.mc.profiler.endStartSection("terrain");
-        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
-        GlStateManager.disableAlpha();
-
-        if (Configs.Visuals.ENABLE_SCHEMATIC_BLOCKS.getBooleanValue())
-        {
-            GlStateManager.pushMatrix();
-
-            if (Configs.Visuals.RENDER_COLLIDING_SCHEMATIC_BLOCKS.getBooleanValue())
-            {
-                GlStateManager.enablePolygonOffset();
-                GlStateManager.doPolygonOffset(-0.2f, -0.4f);
-            }
-
-            this.startShaderIfEnabled();
-
-            fi.dy.masa.malilib.render.RenderUtils.setupBlend();
-
-            renderGlobal.renderBlockLayer(BlockRenderLayer.SOLID, partialTicks, entity);
-
-            renderGlobal.renderBlockLayer(BlockRenderLayer.CUTOUT_MIPPED, partialTicks, entity);
-
-            this.mc.getTextureManager().getTexture(TextureMap.LOCATION_BLOCKS_TEXTURE).setBlurMipmap(false, false);
-            renderGlobal.renderBlockLayer(BlockRenderLayer.CUTOUT, partialTicks, entity);
-            this.mc.getTextureManager().getTexture(TextureMap.LOCATION_BLOCKS_TEXTURE).restoreLastBlurMipmap();
-
-            if (Configs.Visuals.RENDER_COLLIDING_SCHEMATIC_BLOCKS.getBooleanValue())
-            {
-                GlStateManager.doPolygonOffset(0f, 0f);
-                GlStateManager.disablePolygonOffset();
-            }
-
-            GlStateManager.disableBlend();
-            GlStateManager.shadeModel(GL11.GL_FLAT);
-            GlStateManager.alphaFunc(GL11.GL_GREATER, 0.01F);
-
-            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
-            GlStateManager.popMatrix();
-
-            this.mc.profiler.endStartSection("entities");
-
-            GlStateManager.pushMatrix();
-
-            fi.dy.masa.malilib.render.RenderUtils.enableItemLighting();
-            fi.dy.masa.malilib.render.RenderUtils.setupBlend();
-
-            renderGlobal.renderEntities(entity, icamera, partialTicks);
-
-            GlStateManager.disableFog(); // Fixes Structure Blocks breaking all rendering
-            GlStateManager.disableBlend();
-            fi.dy.masa.malilib.render.RenderUtils.disableItemLighting();
-
-            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
-            GlStateManager.popMatrix();
-
-            GlStateManager.enableCull();
-            GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
-            this.mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
             GlStateManager.shadeModel(GL11.GL_SMOOTH);
 
-            this.mc.profiler.endStartSection("translucent");
-            GlStateManager.depthMask(false);
+            this.mc.profiler.endStartSection("prepare_terrain");
+            this.mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+            fi.dy.masa.malilib.render.RenderUtils.disableItemLighting();
 
-            GlStateManager.pushMatrix();
+            RenderGlobalSchematic renderGlobal = this.getWorldRenderer();
 
-            fi.dy.masa.malilib.render.RenderUtils.setupBlend();
+            this.mc.profiler.endStartSection("terrain_setup");
+            renderGlobal.setupTerrain(entity, partialTicks, icamera, this.frameCount++, this.mc.player.isSpectator());
 
-            renderGlobal.renderBlockLayer(BlockRenderLayer.TRANSLUCENT, partialTicks, entity);
+            this.mc.profiler.endStartSection("update_chunks");
+            renderGlobal.updateChunks(finishTimeNano);
 
-            GlStateManager.popMatrix();
+            this.mc.profiler.endStartSection("terrain");
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.disableAlpha();
 
-            this.disableShader();
+            if (Configs.Visuals.ENABLE_SCHEMATIC_BLOCKS.getBooleanValue()) {
+                GlStateManager.pushMatrix();
+
+                if (Configs.Visuals.RENDER_COLLIDING_SCHEMATIC_BLOCKS.getBooleanValue()) {
+                    GlStateManager.enablePolygonOffset();
+                    GlStateManager.doPolygonOffset(-0.2f, -0.4f);
+                }
+
+                this.startShaderIfEnabled();
+
+                fi.dy.masa.malilib.render.RenderUtils.setupBlend();
+
+                renderGlobal.renderBlockLayer(BlockRenderLayer.SOLID, partialTicks, entity);
+
+                renderGlobal.renderBlockLayer(BlockRenderLayer.CUTOUT_MIPPED, partialTicks, entity);
+
+                this.mc.getTextureManager().getTexture(TextureMap.LOCATION_BLOCKS_TEXTURE).setBlurMipmap(false, false);
+                renderGlobal.renderBlockLayer(BlockRenderLayer.CUTOUT, partialTicks, entity);
+                this.mc.getTextureManager().getTexture(TextureMap.LOCATION_BLOCKS_TEXTURE).restoreLastBlurMipmap();
+
+                if (Configs.Visuals.RENDER_COLLIDING_SCHEMATIC_BLOCKS.getBooleanValue()) {
+                    GlStateManager.doPolygonOffset(0f, 0f);
+                    GlStateManager.disablePolygonOffset();
+                }
+
+                GlStateManager.disableBlend();
+                GlStateManager.shadeModel(GL11.GL_FLAT);
+                GlStateManager.alphaFunc(GL11.GL_GREATER, 0.01F);
+
+                GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+                GlStateManager.popMatrix();
+
+                this.mc.profiler.endStartSection("entities");
+
+                GlStateManager.pushMatrix();
+
+                fi.dy.masa.malilib.render.RenderUtils.enableItemLighting();
+                fi.dy.masa.malilib.render.RenderUtils.setupBlend();
+
+                renderGlobal.renderEntities(entity, icamera, partialTicks);
+
+                GlStateManager.disableFog(); // Fixes Structure Blocks breaking all rendering
+                GlStateManager.disableBlend();
+                fi.dy.masa.malilib.render.RenderUtils.disableItemLighting();
+
+                GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+                GlStateManager.popMatrix();
+
+                GlStateManager.enableCull();
+                GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
+                this.mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+                GlStateManager.shadeModel(GL11.GL_SMOOTH);
+
+                this.mc.profiler.endStartSection("translucent");
+                GlStateManager.depthMask(false);
+
+                GlStateManager.pushMatrix();
+
+                fi.dy.masa.malilib.render.RenderUtils.setupBlend();
+
+                renderGlobal.renderBlockLayer(BlockRenderLayer.TRANSLUCENT, partialTicks, entity);
+
+                GlStateManager.popMatrix();
+
+                this.disableShader();
+            }
+
+            this.mc.profiler.endStartSection("overlay");
+            this.renderSchematicOverlay();
+
+            GlStateManager.enableAlpha();
+            GlStateManager.disableBlend();
+            GlStateManager.depthMask(true);
+            GlStateManager.shadeModel(GL11.GL_FLAT);
+            GlStateManager.enableCull();
+
+            this.mc.profiler.endSection();
         }
-
-        this.mc.profiler.endStartSection("overlay");
-        this.renderSchematicOverlay();
-
-        GlStateManager.enableAlpha();
-        GlStateManager.disableBlend();
-        GlStateManager.depthMask(true);
-        GlStateManager.shadeModel(GL11.GL_FLAT);
-        GlStateManager.enableCull();
-
-        this.mc.profiler.endSection();
     }
 
     public void renderSchematicOverlay()
@@ -273,35 +272,38 @@ public class LitematicaRenderer
 
     public void piecewisePrepareAndUpdate(float partialTicks)
     {
-        this.renderPiecewise = Configs.Generic.BETTER_RENDER_ORDER.getBooleanValue() &&
-                               Configs.Visuals.ENABLE_RENDERING.getBooleanValue() &&
-                               this.mc.getRenderViewEntity() != null;
-        this.renderPiecewisePrepared = false;
-        this.renderPiecewiseBlocks = false;
+        if(this.worldRenderer.world != null) {
+            this.renderPiecewise = Configs.Generic.BETTER_RENDER_ORDER.getBooleanValue() &&
+                    Configs.Visuals.ENABLE_RENDERING.getBooleanValue() &&
+                    this.mc.getRenderViewEntity() != null;
+            this.renderPiecewisePrepared = false;
+            this.renderPiecewiseBlocks = false;
 
-        if (this.renderPiecewise)
-        {
-            boolean invert = Hotkeys.INVERT_GHOST_BLOCK_RENDER_STATE.getKeybind().isKeybindHeld();
-            this.renderPiecewiseSchematic = Configs.Visuals.ENABLE_SCHEMATIC_RENDERING.getBooleanValue() != invert;
-            this.renderPiecewiseBlocks = this.renderPiecewiseSchematic && Configs.Visuals.ENABLE_SCHEMATIC_BLOCKS.getBooleanValue();
+            if (this.renderPiecewise) {
+                boolean invert = Hotkeys.INVERT_GHOST_BLOCK_RENDER_STATE.getKeybind().isKeybindHeld();
+                this.renderPiecewiseSchematic = Configs.Visuals.ENABLE_SCHEMATIC_RENDERING.getBooleanValue() != invert;
+                this.renderPiecewiseBlocks = this.renderPiecewiseSchematic && Configs.Visuals.ENABLE_SCHEMATIC_BLOCKS.getBooleanValue();
 
-            this.mc.profiler.startSection("litematica_culling");
+                this.mc.profiler.startSection("litematica_culling");
 
-            Entity entity = this.mc.getRenderViewEntity();
-            ICamera icamera = this.createCamera(entity, partialTicks);
+                Entity entity = this.mc.getRenderViewEntity();
+                ICamera icamera = this.createCamera(entity, partialTicks);
 
-            this.calculateFinishTime();
-            RenderGlobalSchematic renderGlobal = this.getWorldRenderer();
+                this.calculateFinishTime();
+                RenderGlobalSchematic renderGlobal = this.getWorldRenderer();
 
-            this.mc.profiler.endStartSection("litematica_terrain_setup");
-            renderGlobal.setupTerrain(entity, partialTicks, icamera, this.frameCount++, this.mc.player.isSpectator());
+                this.mc.profiler.endStartSection("litematica_terrain_setup");
+                renderGlobal.setupTerrain(entity, partialTicks, icamera, this.frameCount++, this.mc.player.isSpectator());
 
-            this.mc.profiler.endStartSection("litematica_update_chunks");
-            renderGlobal.updateChunks(this.finishTimeNano);
+                this.mc.profiler.endStartSection("litematica_update_chunks");
+                renderGlobal.updateChunks(this.finishTimeNano);
 
-            this.mc.profiler.endSection();
+                this.mc.profiler.endSection();
 
-            this.renderPiecewisePrepared = true;
+                this.renderPiecewisePrepared = true;
+            }
+        } else {
+
         }
     }
 

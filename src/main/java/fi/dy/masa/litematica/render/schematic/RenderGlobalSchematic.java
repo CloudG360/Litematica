@@ -67,7 +67,7 @@ public class RenderGlobalSchematic extends RenderGlobal
     private final Set<TileEntity> setTileEntities = new HashSet<>();
     private final List<RenderChunkSchematicVbo> renderInfos = new ArrayList<>(1024);
     private Set<RenderChunkSchematicVbo> chunksToUpdate = new LinkedHashSet<>();
-    private WorldClient world;
+    public WorldClient world = null;
     private ViewFrustum viewFrustum;
     private double frustumUpdatePosX = Double.MIN_VALUE;
     private double frustumUpdatePosY = Double.MIN_VALUE;
